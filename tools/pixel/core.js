@@ -55,24 +55,30 @@
       for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) this.px[y * n + x] = o[y * n + (n - 1 - x)];
       return this;
     }
-    // 불투명 픽셀 바깥 4방향에 윤곽선
+    // 불투명 픽셀 바깥 4방향에 윤곽선.
+    // c === 'sel' 이면 일본식 도트처럼 "안쪽 색을 어둡게 한" 색 윤곽선 (이웃 중 가장 어두운 색을 70% 어둡게)
     outline(c = OUT) {
       const n = this.n, o = this.px.slice();
+      const lum = h => { const [r, g, b] = hex2rgb(h); return r * .3 + g * .59 + b * .11; };
       for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
         if (o[y * n + x]) continue;
-        if ((x > 0 && o[y * n + x - 1]) || (x < n - 1 && o[y * n + x + 1]) || (y > 0 && o[(y - 1) * n + x]) || (y < n - 1 && o[(y + 1) * n + x])) this.px[y * n + x] = c;
+        const nb = [x > 0 && o[y * n + x - 1], x < n - 1 && o[y * n + x + 1], y > 0 && o[(y - 1) * n + x], y < n - 1 && o[(y + 1) * n + x]].filter(Boolean);
+        if (!nb.length) continue;
+        if (c === 'sel') { const d = nb.reduce((a, b) => lum(b) < lum(a) ? b : a); this.px[y * n + x] = mix(d, OUT, .7); }
+        else this.px[y * n + x] = c;
       }
       return this;
     }
   }
 
-  const REG = { characters: [], weapons: [], monsters: [] };
+  const REG = { characters: [], weapons: [], monsters: [], templates: [] };
   // add('characters', id, 이름, 설명, 태그[], (s)=>{ ...그리기... })
-  function add(cat, id, name, desc, tags, draw) { REG[cat].push({ cat, id, name, desc, tags, draw }); }
+  // 7번째 인자 opts: { outline: 'solid' | '#rrggbb' } (기본은 색 윤곽선 'sel')
+  function add(cat, id, name, desc, tags, draw, opts = {}) { REG[cat].push({ cat, id, name, desc, tags, draw, ...opts }); }
   function render(item, size) {
     const s = new Surface(size);
     item.draw(s);
-    s.xform(1).outline();
+    s.xform(1).outline(item.outline === 'solid' ? OUT : (item.outline || 'sel')); // item.outline = '#rrggbb' 로 고정 윤곽선, 'solid' 는 검정
     return { w: size, h: size, px: s.px };
   }
   root.PX = { Surface, REG, add, render, OUT, mix, lighten, darken };

@@ -296,7 +296,7 @@ function renderWorks() {
 }
 
 // ---------- 예시 갤러리 ----------
-const CATS = { characters: '캐릭터', weapons: '무기', monsters: '몬스터' };
+const CATS = { characters: '캐릭터', weapons: '무기', monsters: '몬스터', templates: '기본 틀' };
 let cat = 'characters';
 const cache = {};
 function sprite(item, size) { const k = item.id + size; return cache[k] || (cache[k] = PX.render(item, size)); }
@@ -351,7 +351,7 @@ function showTab(t) {
   closeMenus();
 }
 document.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => showTab(b.dataset.tab));
-Object.keys(CATS).forEach(k => { const s = document.querySelector(`[data-cnt="${k}"]`); const n = window.PX ? PX.REG[k].length : 0; if (s && n) s.textContent = n; });
+Object.keys(CATS).forEach(k => { const s = document.querySelector(`[data-cnt="${k}"]`); const n = window.PX && PX.REG[k] ? PX.REG[k].length : 0; if (s && n) s.textContent = n; });
 
 // ---------- 시작 ----------
 try {
