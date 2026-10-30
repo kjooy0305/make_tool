@@ -168,6 +168,7 @@ function stat() {
   let maxD = 0; blocks.forEach(b => { maxD = Math.max(maxD, b.depth + 1); });
   const n = blocks.filter(b => b.text.trim()).length;
   $('stat').textContent = n ? `${n}개 · ${maxD}단계` : '';
+  updateLevels();
 }
 
 // ---------- 키보드 / 붙여넣기 ----------
@@ -260,8 +261,75 @@ function foldAll(fn) {
 }
 $('expand').onclick = () => foldAll(() => false);
 $('collapse').onclick = () => foldAll(() => true);
-document.querySelectorAll('[data-lv]').forEach(b => b.onclick = () => foldAll(x => x.depth >= +b.dataset.lv - 1));
-document.querySelectorAll('[data-copy]').forEach(b => b.onclick = () => copy(serialize(b.dataset.copy)));
+// 단계별 보기: 버튼은 최대 3단계까지, 그 이상은 숫자 입력(휠/화살표)으로
+function showLevel(n) { foldAll(x => x.depth >= n - 1); }
+function updateLevels() {
+  const max = Math.max(1, ...blocks.map(b => b.depth + 1));
+  const box = $('lvBtns'), want = Math.min(max, 3);
+  if (box.children.length !== want) {
+    box.textContent = '';
+    for (let n = 1; n <= want; n++) {
+      const btn = el('button', 'chip'); btn.textContent = n + '단계';
+      btn.onclick = () => { $('lvNum').value = n; showLevel(n); };
+      box.append(btn);
+    }
+  }
+  const inp = $('lvNum');
+  inp.max = max;
+  if (!inp.dataset.touched || +inp.value > max) inp.value = max;
+}
+$('lvNum').addEventListener('input', e => {
+  const inp = e.target, max = +inp.max;
+  if (inp.value === '') return;
+  inp.dataset.touched = '1';
+  const v = Math.max(1, Math.min(max, Math.round(+inp.value) || 1));
+  inp.value = v; showLevel(v);
+});
+$('lvNum').addEventListener('wheel', e => {
+  e.preventDefault();
+  const inp = e.target, max = +inp.max;
+  const v = Math.max(1, Math.min(max, (+inp.value || max) + (e.deltaY < 0 ? 1 : -1)));
+  inp.dataset.touched = '1'; inp.value = v; showLevel(v);
+}, { passive: false });
+
+// 내보내기: 버튼을 누르면 형식 메뉴가 뜨고, 고르면 복사 / TXT 저장
+const FORMATS = [['tab', '탭 들여쓰기', '⇥ a'], ['md', '마크다운', '- a'], ['ㄴ', 'ㄴ 형식', 'ㄴa'], ['num', '번호', '1.1.']];
+const hasText = () => blocks.some(b => b.text.trim());
+function doCopy(kind) { copy(serialize(kind)); }
+function doDownload(kind) {
+  const d = new Date(), p = n => String(n).padStart(2, '0');
+  const name = `아이디어정리_${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}.txt`;
+  const url = URL.createObjectURL(new Blob(['\uFEFF' + serialize(kind) + '\n'], { type: 'text/plain;charset=utf-8' }));
+  const a = el('a'); a.href = url; a.download = name; document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast('TXT 저장됨');
+}
+function closeMenus() {
+  document.querySelectorAll('.menu').forEach(m => { m.hidden = true; });
+  document.querySelectorAll('[aria-haspopup]').forEach(b => b.setAttribute('aria-expanded', 'false'));
+}
+function setupMenu(btnId, menuId, run, emptyMsg) {
+  const btn = $(btnId), menu = $(menuId);
+  FORMATS.forEach(([k, label, ex]) => {
+    const it = el('button'); it.type = 'button';
+    it.innerHTML = `<span>${label}</span><i>${ex}</i>`;
+    it.onclick = () => { closeMenus(); run(k); };
+    menu.append(it);
+  });
+  btn.onclick = e => {
+    e.stopPropagation();
+    const open = menu.hidden;
+    closeMenus();
+    if (!open) return;
+    if (!hasText()) return toast(emptyMsg);
+    menu.hidden = false; btn.setAttribute('aria-expanded', 'true');
+    menu.querySelector('button').focus();
+  };
+}
+setupMenu('copyBtn', 'copyMenu', doCopy, '복사할 내용이 없습니다');
+setupMenu('dlBtn', 'dlMenu', doDownload, '저장할 내용이 없습니다');
+document.addEventListener('click', e => { if (!e.target.closest('.menu')) closeMenus(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenus(); });
 $('undo').onclick = () => {
   const s = undo.pop(); if (!s) return toast('되돌릴 내용이 없습니다');
   blocks = JSON.parse(s); normalize(); render(); save();

@@ -20,6 +20,14 @@
 .mk.has{border-color:var(--ink);border-width:1.5px}
 .mk.closed{border-width:3px}
 .row textarea{flex:1;min-width:0;border:0;background:none;color:var(--ink);font:inherit;line-height:1.55;padding:10px 4px;resize:none;overflow:hidden;display:block;outline:none}
+.lvin{display:inline-flex;align-items:center;gap:6px;font-size:14px;border:1px solid var(--ink);border-radius:999px;padding:0 12px 0 4px;min-height:38px}
+.lvin input{width:56px;min-height:30px;border:0;border-right:1px solid var(--ink);background:none;color:var(--ink);font:800 14px var(--font-num);text-align:center;border-radius:999px 0 0 999px}
+.pop{position:relative}
+.menu{position:absolute;top:calc(100% + 6px);left:0;z-index:20;min-width:190px;background:var(--paper);border:2px solid var(--ink);border-radius:12px;padding:6px;display:grid;gap:2px}
+.menu[hidden]{display:none}
+.menu button{font:inherit;font-weight:500;color:var(--ink);background:var(--paper);border:0;border-radius:8px;min-height:44px;padding:0 12px;text-align:left;cursor:pointer;display:flex;justify-content:space-between;gap:16px;align-items:center}
+.menu button:hover,.menu button:focus-visible{box-shadow:inset 0 0 0 2px var(--ink);outline:none}
+.menu button i{font:normal 800 11px var(--font-num)}
 .add{font:inherit;color:var(--ink);background:var(--paper);border:1.5px dashed var(--ink);border-radius:10px;min-height:44px;cursor:pointer;width:100%}
 .add:hover{border-style:solid}
 .hint{font-size:12.5px;margin:0}
@@ -50,9 +58,10 @@ dialog textarea{width:100%;height:42vh;margin:10px 0;border:1.5px solid var(--in
     <span class="sep"></span>
     <button class="chip" id="expand">모두 펼치기</button>
     <button class="chip" id="collapse">모두 접기</button>
-    <button class="chip" data-lv="1">1단계</button>
-    <button class="chip" data-lv="2">2단계</button>
-    <button class="chip" data-lv="3">3단계</button>
+    <span id="lvBtns" style="display:contents"></span>
+    <label class="lvin" title="입력하거나 휠/화살표로 조절">
+      <input type="number" id="lvNum" min="1" max="1" value="1" inputmode="numeric"> 단계까지
+    </label>
   </div>
 
   <div class="bar">
@@ -60,13 +69,18 @@ dialog textarea{width:100%;height:42vh;margin:10px 0;border:1.5px solid var(--in
     <button class="btn" id="undo">되돌리기</button>
     <button class="btn" id="sample">예시</button>
     <button class="btn" id="clear">비우기</button>
-    <span class="sep"></span>
-    <span style="font-size:13px;font-weight:700">복사</span>
-    <button class="chip" data-copy="tab">탭</button>
-    <button class="chip" data-copy="md">마크다운</button>
-    <button class="chip" data-copy="ㄴ">ㄴ</button>
-    <button class="chip" data-copy="num">번호</button>
     <span id="stat" style="margin-left:auto;font:800 12px var(--font-num)"></span>
+  </div>
+
+  <div class="bar">
+    <div class="pop">
+      <button class="btn" id="copyBtn" style="border-width:3px" aria-haspopup="true" aria-expanded="false">복사 ▾</button>
+      <div class="menu" id="copyMenu" hidden></div>
+    </div>
+    <div class="pop">
+      <button class="btn" id="dlBtn" aria-haspopup="true" aria-expanded="false">TXT 저장 ▾</button>
+      <div class="menu" id="dlMenu" hidden></div>
+    </div>
   </div>
 
   <main class="editor" id="blocks"></main>
