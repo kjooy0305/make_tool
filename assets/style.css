@@ -1,19 +1,46 @@
-:root{--bg:#fafaf8;--fg:#1d1d1f;--mut:#6b6b70;--line:#e2e2de;--card:#fff;--acc:#3b5bdb;--accbg:#edf0ff}
-@media (prefers-color-scheme:dark){:root{--bg:#161618;--fg:#ececee;--mut:#9a9aa2;--line:#2e2e33;--card:#1e1e21;--acc:#8ea2ff;--accbg:#262a40}}
+/* 흰 종이 + 검은 선. 색은 쓰지 않고 선 굵기로 강조한다. */
+:root{
+  --paper:#fff;--ink:#000;
+  --font-body:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --font-num:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  color-scheme:light;
+}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.6 system-ui,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif}
-a{color:inherit;text-decoration:none}
-.wrap{max-width:960px;margin:0 auto;padding:32px 20px}
-header.top{display:flex;align-items:center;gap:12px;margin-bottom:24px}
-header.top h1{font-size:20px;margin:0}
-header.top a.back{color:var(--mut);font-size:14px}
-input[type=search]{width:100%;padding:12px 14px;font-size:16px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--fg)}
-input[type=search]:focus,textarea:focus{outline:2px solid var(--acc);outline-offset:0}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-top:20px}
-.card{display:block;padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--card);transition:border-color .15s}
-.card:hover{border-color:var(--acc)}
-.card h3{margin:0 0 4px;font-size:16px}
-.card p{margin:0;color:var(--mut);font-size:14px}
+html{background:var(--paper)}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--font-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:24px 56px;
+}
+a{color:inherit}
+.page{max-width:780px;margin:0 auto;display:grid;gap:16px}
+.head h1{margin:0;font-size:28px;font-weight:900;letter-spacing:-.02em;text-wrap:balance}
+.head p{margin:6px 0 0;max-width:62ch}
+.head .back{display:inline-block;margin-bottom:8px;font-size:13px;font-weight:700;text-decoration:none;border-bottom:2px solid var(--ink)}
+
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chip,.btn{
+  font:inherit;font-size:14px;color:var(--ink);background:var(--paper);
+  border:1px solid var(--ink);border-radius:999px;padding:6px 14px;min-height:38px;cursor:pointer;
+}
+.btn{border-width:1.5px;border-radius:12px;font-weight:700}
+.chip[aria-pressed="true"]{border-width:3px;padding:4px 12px;font-weight:700}
+.chip:hover,.btn:hover{border-width:3px;padding-block:4px}
+.chip:focus-visible,.btn:focus-visible,.card:focus-visible,textarea:focus-visible,input:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.sep{width:1px;align-self:stretch;background:var(--ink);margin:4px 2px}
+::placeholder{color:var(--ink);opacity:.5}
+
+/* 홈 */
+.search{width:100%;min-height:48px;font:inherit;font-size:16px;color:var(--ink);background:var(--paper);border:1.5px solid var(--ink);border-radius:12px;padding:0 14px}
+.search:focus{border-width:3px;padding:0 12px;outline:none}
+.sec{display:flex;justify-content:space-between;font-size:12px;font-weight:700;letter-spacing:.04em;border-bottom:2px solid var(--ink);padding-bottom:3px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.card{display:block;padding:16px;border:1.5px solid var(--ink);border-radius:14px;text-decoration:none;color:var(--ink);background:var(--paper)}
+.card:hover{border-width:3px;padding:14.5px}
+.card h3{margin:0 0 4px;font-size:17px;font-weight:900;letter-spacing:-.01em}
+.card p{margin:0;font-size:14px}
 .tags{margin-top:10px;display:flex;gap:6px;flex-wrap:wrap}
-.tag{font-size:12px;padding:2px 8px;border-radius:99px;background:var(--accbg);color:var(--acc)}
-.empty{color:var(--mut);text-align:center;padding:48px 0}
+.tag{border:1px solid var(--ink);border-radius:6px;padding:0 6px;font-size:11px;font-weight:700}
+.empty{text-align:center;padding:40px 0;border:1.5px dashed var(--ink);border-radius:12px}

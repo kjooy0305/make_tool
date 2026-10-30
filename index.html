@@ -2,20 +2,25 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>make_tool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@500;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
-<div class="wrap">
-  <header class="top"><h1>make_tool</h1></header>
-  <input type="search" id="q" placeholder="도구 검색 (이름, 설명, 태그)" autofocus>
+<div class="page">
+  <header class="head"><h1>make_tool</h1><p>만들어 둔 도구 모음</p></header>
+  <input class="search" type="search" id="q" placeholder="도구 검색 (이름, 설명, 태그)" autocomplete="off">
+  <div class="sec"><span>도구</span><span id="count" style="font-family:var(--font-num)"></span></div>
   <div class="grid" id="list"></div>
   <div class="empty" id="empty" hidden>검색 결과가 없습니다.</div>
 </div>
 <script src="tools.js"></script>
 <script>
-const list = document.getElementById('list'), empty = document.getElementById('empty'), q = document.getElementById('q');
+const list = document.getElementById('list'), empty = document.getElementById('empty'),
+      q = document.getElementById('q'), count = document.getElementById('count');
 const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function render() {
   const k = q.value.trim().toLowerCase();
@@ -23,6 +28,7 @@ function render() {
   list.innerHTML = items.map(t => `<a class="card" href="${esc(t.path)}"><h3>${esc(t.name)}</h3><p>${esc(t.desc)}</p>
     <div class="tags">${(t.tags || []).map(x => `<span class="tag">${esc(x)}</span>`).join('')}</div></a>`).join('');
   empty.hidden = items.length > 0;
+  count.textContent = items.length;
 }
 q.addEventListener('input', render);
 render();

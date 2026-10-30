@@ -2,64 +2,102 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>계층형 아이디어 정리 · make_tool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@500;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../../assets/style.css">
 <style>
-.wrap{max-width:1200px}
-.cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-@media (max-width:800px){.cols{grid-template-columns:1fr}}
-textarea{width:100%;min-height:60vh;padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--fg);font:14px/1.6 ui-monospace,Menlo,Consolas,"D2Coding",monospace;resize:vertical;tab-size:2}
-.panel{border:1px solid var(--line);border-radius:10px;background:var(--card);padding:14px;min-height:60vh;overflow:auto}
-.bar{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px;align-items:center}
-button{font:inherit;font-size:13px;padding:6px 12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--fg);cursor:pointer}
-button:hover{border-color:var(--acc);color:var(--acc)}
-.stat{color:var(--mut);font-size:13px;margin-left:auto}
-.hint{color:var(--mut);font-size:13px;margin:8px 0 0}
-ul.tree,ul.tree ul{list-style:none;margin:0;padding-left:20px;border-left:1px solid var(--line)}
-ul.tree{padding-left:0;border:0}
-.node{display:flex;gap:6px;align-items:flex-start;padding:2px 0}
-.tog{flex:none;width:18px;height:22px;border:0;padding:0;background:none;color:var(--mut);cursor:pointer;font-size:11px}
-.tog.leaf{visibility:hidden}
-.txt{white-space:pre-wrap;word-break:break-word}
-li.closed>ul{display:none}
-.cnt{color:var(--mut);font-size:12px;margin-left:4px}
-label.opt{font-size:13px;color:var(--mut);display:flex;gap:4px;align-items:center}
-.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:8px 16px;border-radius:99px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none}
+.editor{border:2px solid var(--ink);border-radius:14px;padding:6px 12px;min-height:160px}
+.row{display:flex;align-items:stretch;border-bottom:1px solid var(--ink);min-height:44px}
+.row:last-child{border-bottom:0}
+.row:focus-within{box-shadow:0 1px 0 var(--ink)}
+.guide{flex:none;width:22px;border-left:1px solid var(--ink);margin-left:8px}
+.mk{flex:none;align-self:flex-start;margin:8px 4px 0 0;min-width:28px;height:28px;padding:0 4px;display:inline-flex;align-items:center;justify-content:center;
+  font:800 12px var(--font-num);color:var(--ink);background:var(--paper);border:2px solid transparent;border-radius:999px;cursor:pointer}
+.mk.dot{font-size:9px}
+.mk.has{border-color:var(--ink);border-width:1.5px}
+.mk.closed{border-width:3px}
+.row textarea{flex:1;min-width:0;border:0;background:none;color:var(--ink);font:inherit;line-height:1.55;padding:10px 4px;resize:none;overflow:hidden;display:block;outline:none}
+.add{font:inherit;color:var(--ink);background:var(--paper);border:1.5px dashed var(--ink);border-radius:10px;min-height:44px;cursor:pointer;width:100%}
+.add:hover{border-style:solid}
+.hint{font-size:12.5px;margin:0}
+.hint kbd{font:700 11px var(--font-num);border:1px solid var(--ink);border-radius:5px;padding:0 5px}
+.dock{position:sticky;bottom:0;display:flex;gap:6px;flex-wrap:wrap;justify-content:center;background:var(--paper);border-top:2px solid var(--ink);
+  padding:8px 0 max(8px,env(safe-area-inset-bottom,0px))}
+.dock .btn{min-width:44px;padding:0 10px}
+dialog{width:min(640px,calc(100vw - 32px));border:2px solid var(--ink);border-radius:14px;padding:16px;background:var(--paper);color:var(--ink)}
+dialog::backdrop{background:rgba(255,255,255,.85)}
+dialog h2{margin:0 0 4px;font-size:18px;font-weight:900}
+dialog textarea{width:100%;height:42vh;margin:10px 0;border:1.5px solid var(--ink);border-radius:10px;padding:10px 12px;font:14px/1.6 var(--font-num);color:var(--ink);background:var(--paper);resize:vertical;tab-size:2}
+.toast{position:fixed;left:50%;bottom:76px;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:8px 16px;border-radius:999px;font-size:13px;font-weight:700;opacity:0;pointer-events:none;transition:opacity .2s}
 .toast.on{opacity:1}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header class="top"><a class="back" href="../../">← 목록</a><h1>계층형 아이디어 정리</h1></header>
-  <div class="cols">
-    <div>
-      <div class="bar">
-        <button id="clear">비우기</button>
-        <button id="sample">예시</button>
-        <label class="opt"><input type="checkbox" id="optL" checked> 맨 앞 <code>l</code>/<code>|</code>를 들여쓰기로</label>
-      </div>
-      <textarea id="src" spellcheck="false" placeholder="여기에 붙여넣기&#10;&#10;지원: 탭, 공백 들여쓰기, ㄴ / ㄴㄴ, └ ├, l | (세로선), - * • 불릿, 1. 번호"></textarea>
-      <p class="hint">길이나 깊이 제한 없음. 붙여넣으면 바로 오른쪽에 트리로 정리됩니다.</p>
-    </div>
-    <div>
-      <div class="bar">
-        <button id="expand">모두 펼치기</button>
-        <button id="collapse">모두 접기</button>
-        <button data-lv="1">1단계</button><button data-lv="2">2단계</button><button data-lv="3">3단계</button>
-        <span class="stat" id="stat"></span>
-      </div>
-      <div class="bar">
-        <span style="font-size:13px;color:var(--mut)">복사:</span>
-        <button data-copy="tab">탭 들여쓰기</button>
-        <button data-copy="md">마크다운</button>
-        <button data-copy="ㄴ">ㄴ 형식</button>
-        <button data-copy="num">번호(1.1.2)</button>
-      </div>
-      <div class="panel"><ul class="tree" id="tree"></ul></div>
-    </div>
+<div class="page">
+  <header class="head">
+    <a class="back" href="../../">← 목록</a>
+    <h1>계층형 아이디어 정리</h1>
+    <p>블록마다 한 줄씩 적고, <b>Tab</b>으로 계층을 나눠요. 계층형 텍스트를 통째로 붙여넣으면 블록으로 바뀝니다.</p>
+  </header>
+
+  <div class="bar" id="bar1">
+    <button class="chip" data-mode="bullet" aria-pressed="true">● 불릿</button>
+    <button class="chip" data-mode="num" aria-pressed="false">1.1 번호</button>
+    <button class="chip" data-mode="ㄴ" aria-pressed="false">ㄴ 형식</button>
+    <span class="sep"></span>
+    <button class="chip" id="expand">모두 펼치기</button>
+    <button class="chip" id="collapse">모두 접기</button>
+    <button class="chip" data-lv="1">1단계</button>
+    <button class="chip" data-lv="2">2단계</button>
+    <button class="chip" data-lv="3">3단계</button>
+  </div>
+
+  <div class="bar">
+    <button class="btn" id="bulk">텍스트 붙여넣기</button>
+    <button class="btn" id="undo">되돌리기</button>
+    <button class="btn" id="sample">예시</button>
+    <button class="btn" id="clear">비우기</button>
+    <span class="sep"></span>
+    <span style="font-size:13px;font-weight:700">복사</span>
+    <button class="chip" data-copy="tab">탭</button>
+    <button class="chip" data-copy="md">마크다운</button>
+    <button class="chip" data-copy="ㄴ">ㄴ</button>
+    <button class="chip" data-copy="num">번호</button>
+    <span id="stat" style="margin-left:auto;font:800 12px var(--font-num)"></span>
+  </div>
+
+  <main class="editor" id="blocks"></main>
+  <button class="add" id="add">+ 블록 추가</button>
+
+  <p class="hint">
+    <kbd>Enter</kbd> 새 블록 · <kbd>Tab</kbd> 들여쓰기 · <kbd>Shift</kbd>+<kbd>Tab</kbd> 내어쓰기 ·
+    <kbd>Alt</kbd>+<kbd>↑</kbd><kbd>↓</kbd> 블록 이동 · 앞의 ●를 누르면 하위 블록 접기/펼치기 ·
+    빈 블록에서 <kbd>Backspace</kbd> 삭제
+  </p>
+
+  <div class="dock" id="dock">
+    <button class="btn" data-act="out" title="내어쓰기 (Shift+Tab)">⇤ 내어쓰기</button>
+    <button class="btn" data-act="in" title="들여쓰기 (Tab)">들여쓰기 ⇥</button>
+    <button class="btn" data-act="up" title="위로 (Alt+↑)">↑</button>
+    <button class="btn" data-act="down" title="아래로 (Alt+↓)">↓</button>
+    <button class="btn" data-act="del">삭제</button>
   </div>
 </div>
+
+<dialog id="dlg">
+  <h2>텍스트 붙여넣기</h2>
+  <div style="font-size:13px">탭, 공백, ㄴ, l, -, * 로 계층을 나타낸 텍스트를 붙여넣으세요.</div>
+  <textarea id="bulkText" spellcheck="false" placeholder="프로젝트&#10;ㄴ목표&#10;ㄴㄴ세부 목표&#10;ㄴ일정"></textarea>
+  <div class="bar" style="justify-content:flex-end">
+    <label style="margin-right:auto;font-size:13px"><input type="checkbox" id="optL" checked> 맨 앞 l, | 를 들여쓰기로</label>
+    <button class="btn" id="dlgClose">닫기</button>
+    <button class="btn" id="dlgAppend">맨 아래에 추가</button>
+    <button class="btn" id="dlgReplace" style="border-width:3px">전체 바꾸기</button>
+  </div>
+</dialog>
 <div class="toast" id="toast"></div>
 <script src="outline.js"></script>
 </body>
