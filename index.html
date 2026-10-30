@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>make_tool</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><h1>make_tool</h1></header>
+  <input type="search" id="q" placeholder="도구 검색 (이름, 설명, 태그)" autofocus>
+  <div class="grid" id="list"></div>
+  <div class="empty" id="empty" hidden>검색 결과가 없습니다.</div>
+</div>
+<script src="tools.js"></script>
+<script>
+const list = document.getElementById('list'), empty = document.getElementById('empty'), q = document.getElementById('q');
+const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function render() {
+  const k = q.value.trim().toLowerCase();
+  const items = window.TOOLS.filter(t => !k || [t.name, t.desc, ...(t.tags || [])].join(' ').toLowerCase().includes(k));
+  list.innerHTML = items.map(t => `<a class="card" href="${esc(t.path)}"><h3>${esc(t.name)}</h3><p>${esc(t.desc)}</p>
+    <div class="tags">${(t.tags || []).map(x => `<span class="tag">${esc(x)}</span>`).join('')}</div></a>`).join('');
+  empty.hidden = items.length > 0;
+}
+q.addEventListener('input', render);
+render();
+</script>
+</body>
+</html>
