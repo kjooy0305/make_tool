@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>픽셀 아트 스튜디오 · make_tool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@500;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/style.css">
+<style>
+.checker{background-color:#fff;background-image:conic-gradient(#ececec 25%,transparent 0 50%,#ececec 0 75%,transparent 0);background-size:16px 16px}
+canvas.px{image-rendering:pixelated;image-rendering:crisp-edges;display:block}
+.ed{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:16px;align-items:start}
+@media (max-width:880px){.ed{grid-template-columns:minmax(0,1fr)}}
+.stage{border:2px solid var(--ink);border-radius:14px;padding:10px;display:flex;justify-content:center}
+#cv{width:100%;max-width:600px;height:auto;touch-action:none;cursor:crosshair;border:1px solid var(--ink)}
+.side{display:grid;gap:12px}
+.pal{display:grid;grid-template-columns:repeat(8,1fr);gap:4px}
+.sw{aspect-ratio:1;border:1px solid var(--ink);border-radius:6px;padding:0;cursor:pointer;min-width:0}
+.sw[aria-pressed="true"]{border-width:3px;outline:2px solid var(--paper);outline-offset:-5px}
+.cur{display:flex;gap:8px;align-items:center}
+.cur input[type=color]{width:48px;height:40px;border:1.5px solid var(--ink);border-radius:8px;padding:2px;background:var(--paper);cursor:pointer}
+.cur code{font:800 13px var(--font-num)}
+.pvbox{border:1.5px solid var(--ink);border-radius:10px;padding:8px;display:flex;justify-content:center;align-items:center;min-height:90px}
+.txt{width:100%;min-height:40px;font:inherit;color:var(--ink);background:var(--paper);border:1.5px solid var(--ink);border-radius:10px;padding:0 12px}
+.txt:focus{border-width:3px;padding:0 10px;outline:none}
+.gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.gcard{border:1.5px solid var(--ink);border-radius:14px;padding:12px;display:grid;gap:6px;align-content:start}
+.gcard:hover{border-width:3px;padding:10.5px}
+.thumbs{display:flex;gap:10px;align-items:flex-end;justify-content:center;padding:8px;border:1px solid var(--ink);border-radius:10px;min-height:112px}
+.gcard h3{margin:0;font-size:16px;font-weight:900}
+.gcard p{margin:0;font-size:13px}
+.gcard .num{font:800 11px var(--font-num)}
+.small{min-height:34px;font-size:13px;padding:0 10px}
+.drop{outline:3px dashed var(--ink);outline-offset:-8px}
+.note{font-size:12.5px;margin:0}
+</style>
+</head>
+<body>
+<div class="page wide" id="page">
+  <header class="head">
+    <a class="back" href="../../">← 목록</a>
+    <h1>픽셀 아트 스튜디오</h1>
+    <p>그리고, 가져오고, 내보내세요. 예시 캐릭터·무기·몬스터는 16×16과 32×32 두 가지로 준비돼 있고, 눌러서 바로 편집할 수 있어요.</p>
+  </header>
+
+  <nav class="bar" id="tabs">
+    <button class="chip" data-tab="edit" aria-pressed="true">에디터</button>
+    <button class="chip" data-tab="characters" aria-pressed="false">캐릭터 <span class="cnt" data-cnt="characters"></span></button>
+    <button class="chip" data-tab="weapons" aria-pressed="false">무기 <span class="cnt" data-cnt="weapons"></span></button>
+    <button class="chip" data-tab="monsters" aria-pressed="false">몬스터 <span class="cnt" data-cnt="monsters"></span></button>
+    <button class="chip" data-tab="works" aria-pressed="false">내 작품 <span class="cnt" id="worksCnt"></span></button>
+  </nav>
+
+  <!-- 에디터 -->
+  <section id="tab-edit" class="ed">
+    <div style="display:grid;gap:10px">
+      <div class="bar" id="tools">
+        <button class="chip" data-tool="pen" aria-pressed="true" title="P">연필</button>
+        <button class="chip" data-tool="eraser" aria-pressed="false" title="E">지우개</button>
+        <button class="chip" data-tool="fill" aria-pressed="false" title="G">채우기</button>
+        <button class="chip" data-tool="pick" aria-pressed="false" title="I">스포이드</button>
+        <button class="chip" data-tool="line" aria-pressed="false" title="L">선</button>
+        <button class="chip" data-tool="rect" aria-pressed="false" title="R">사각형</button>
+        <button class="chip" data-tool="rectf" aria-pressed="false">채운 사각형</button>
+      </div>
+      <div class="stage"><canvas id="cv"></canvas></div>
+      <div class="bar">
+        <button class="btn small" id="undo" title="Ctrl+Z">되돌리기</button>
+        <button class="btn small" id="redo" title="Ctrl+Shift+Z">다시 실행</button>
+        <span class="sep"></span>
+        <button class="chip" id="sym" aria-pressed="false">좌우 대칭</button>
+        <button class="chip" id="grid" aria-pressed="true">격자</button>
+        <span class="sep"></span>
+        <button class="btn small" id="flipH">좌우 뒤집기</button>
+        <button class="btn small" id="flipV">상하 뒤집기</button>
+        <button class="btn small" id="clear">지우기</button>
+      </div>
+      <p class="note">연필은 드래그로 그려요. 단축키: P 연필 · E 지우개 · G 채우기 · I 스포이드 · L 선 · R 사각형 · Ctrl+Z 되돌리기. 파일을 이 화면에 끌어다 놓아도 가져와져요.</p>
+    </div>
+
+    <aside class="side">
+      <div class="sec"><span>색</span><span id="hex" style="font-family:var(--font-num)"></span></div>
+      <div class="pal" id="pal"></div>
+      <div class="cur">
+        <input type="color" id="color" value="#000000" aria-label="직접 고른 색">
+        <button class="btn small" id="addColor">팔레트에 추가</button>
+      </div>
+
+      <div class="sec"><span>미리보기</span><span id="dim" style="font-family:var(--font-num)"></span></div>
+      <div class="pvbox checker"><canvas id="pv" class="px"></canvas></div>
+
+      <div class="sec"><span>캔버스 크기</span></div>
+      <div class="bar" id="sizes">
+        <button class="chip" data-size="8">8</button>
+        <button class="chip" data-size="16">16</button>
+        <button class="chip" data-size="32">32</button>
+        <button class="chip" data-size="48">48</button>
+        <button class="chip" data-size="64">64</button>
+      </div>
+
+      <div class="sec"><span>파일</span></div>
+      <div class="bar">
+        <button class="btn small" id="importBtn">가져오기</button>
+        <div class="pop">
+          <button class="btn small" id="exportBtn" aria-haspopup="true" aria-expanded="false">내보내기 ▾</button>
+          <div class="menu" id="exportMenu" hidden></div>
+        </div>
+        <input type="file" id="file" accept=".png,.jpg,.jpeg,.gif,.webp,.json,image/*,application/json" hidden>
+      </div>
+      <div class="bar" style="flex-wrap:nowrap">
+        <input class="txt" id="wname" placeholder="작품 이름" maxlength="30">
+        <button class="btn small" id="saveWork" style="flex:none">내 작품에 저장</button>
+      </div>
+    </aside>
+  </section>
+
+  <!-- 예시 갤러리 -->
+  <section id="tab-gallery" hidden style="display:grid;gap:12px">
+    <div class="bar">
+      <input class="search" type="search" id="gq" placeholder="이름, 설명, 태그로 검색" style="flex:1;min-width:200px" autocomplete="off">
+      <div class="pop">
+        <button class="btn" id="sheetBtn" aria-haspopup="true" aria-expanded="false">시트 PNG 저장 ▾</button>
+        <div class="menu" id="sheetMenu" hidden></div>
+      </div>
+    </div>
+    <div class="gal" id="gal"></div>
+    <div class="empty" id="gempty" hidden>검색 결과가 없습니다.</div>
+  </section>
+
+  <!-- 내 작품 -->
+  <section id="tab-works" hidden style="display:grid;gap:12px">
+    <div class="gal" id="wgal"></div>
+    <div class="empty" id="wempty">저장한 작품이 없습니다. 에디터에서 이름을 적고 "내 작품에 저장"을 눌러 보세요.</div>
+  </section>
+</div>
+<div class="toast" id="toast"></div>
+<script src="core.js"></script>
+<script src="sprites_characters.js"></script>
+<script src="sprites_weapons.js"></script>
+<script src="sprites_monsters.js"></script>
+<script src="pixel.js"></script>
+</body>
+</html>
