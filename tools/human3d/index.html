@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>인간 3D 모델 스튜디오 · make_tool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@500;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+html,body{height:100%}
+body{padding:0;overflow:hidden}
+.app{height:100%;display:grid;grid-template-columns:360px minmax(0,1fr);grid-template-rows:auto minmax(0,1fr)}
+.top{grid-column:1/-1;display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:2px solid var(--ink);flex-wrap:wrap}
+.top h1{margin:0;font-size:18px;font-weight:900;letter-spacing:-.02em}
+.top a{font-size:13px;font-weight:700;text-decoration:none;border-bottom:2px solid var(--ink)}
+.top .sp{flex:1}
+.side{display:flex;flex-direction:column;min-height:0;border-right:2px solid var(--ink)}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;padding:8px 10px;border-bottom:1.5px solid var(--ink)}
+.tabs .chip{min-height:32px;padding:2px 11px;font-size:13px}
+.tabs .chip[aria-pressed="true"]{padding:0 9px}
+.panel{flex:1;min-height:0;overflow-y:auto;padding:10px 12px 40px;display:grid;gap:10px;align-content:start}
+.panel[hidden]{display:none}
+.view{position:relative;min-height:0;background:#f2f2f2}
+#cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+.hud{position:absolute;left:10px;top:10px;display:flex;gap:6px;flex-wrap:wrap;pointer-events:none}
+.hud span{background:var(--paper);border:1.5px solid var(--ink);border-radius:999px;padding:2px 10px;font-size:12px;font-weight:700}
+.busy{position:absolute;right:10px;top:10px;background:var(--ink);color:var(--paper);border-radius:999px;padding:2px 12px;font-size:12px;font-weight:700}
+.guide{position:absolute;pointer-events:none;border:2px solid var(--ink);box-shadow:0 0 0 9999px rgba(255,255,255,.55)}
+.thirds{position:absolute;inset:0;pointer-events:none;background:
+ linear-gradient(to right,transparent 33.3%,rgba(0,0,0,.35) 33.3%,rgba(0,0,0,.35) calc(33.3% + 1px),transparent calc(33.3% + 1px),transparent 66.6%,rgba(0,0,0,.35) 66.6%,rgba(0,0,0,.35) calc(66.6% + 1px),transparent calc(66.6% + 1px)),
+ linear-gradient(to bottom,transparent 33.3%,rgba(0,0,0,.35) 33.3%,rgba(0,0,0,.35) calc(33.3% + 1px),transparent calc(33.3% + 1px),transparent 66.6%,rgba(0,0,0,.35) 66.6%,rgba(0,0,0,.35) calc(66.6% + 1px),transparent calc(66.6% + 1px))}
+.sl{display:grid;grid-template-columns:92px minmax(0,1fr) 48px;gap:8px;align-items:center;font-size:13px}
+.sl label{font-weight:700}
+.sl output{font:800 12px var(--font-num);text-align:right}
+.sl.r{grid-template-columns:70px minmax(0,1fr) 44px}
+input[type=range]{width:100%;accent-color:#000;margin:0;height:22px}
+details.g{border:1.5px solid var(--ink);border-radius:12px;padding:6px 10px}
+details.g summary{cursor:pointer;font-weight:900;font-size:14px;min-height:30px;display:flex;align-items:center}
+details.g[open]{border-width:3px;padding:4.5px 8.5px}
+details.g>div{display:grid;gap:6px;padding:6px 0 4px}
+.row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.row>*{min-width:0}
+.btn.sm,.chip.sm{min-height:32px;font-size:13px;padding:0 10px}
+.btn[aria-pressed="true"]{border-width:3px}
+.h{font-size:12px;font-weight:900;letter-spacing:.04em;border-bottom:2px solid var(--ink);padding-bottom:2px;margin-top:4px}
+.note{font-size:12.5px;margin:0}
+.cl{width:38px;height:32px;border:1.5px solid var(--ink);border-radius:8px;padding:2px;background:var(--paper);cursor:pointer}
+.bones{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}
+.bones .chip{min-height:28px;font-size:12px;padding:0 8px;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bones .chip[aria-pressed="true"]{padding:0 6px}
+select,.txt{font:inherit;font-size:13px;min-height:34px;border:1.5px solid var(--ink);border-radius:10px;background:var(--paper);color:var(--ink);padding:0 8px}
+.cch{display:grid;gap:6px}
+.cc{display:flex;align-items:center;gap:6px;border:1.5px solid var(--ink);border-radius:10px;padding:4px 8px;font-size:13px}
+.cc[aria-current="true"]{border-width:3px;padding:2.5px 6.5px}
+.cc b{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:8px 16px;border-radius:999px;font-weight:700;font-size:13px;z-index:20;max-width:90vw}
+@media (max-width:860px){
+ body{overflow:auto}
+ .app{height:auto;grid-template-columns:minmax(0,1fr);grid-template-rows:auto 62vh auto}
+ .view{grid-row:2}.side{grid-row:3;border-right:0;border-top:2px solid var(--ink)}
+ .panel{overflow:visible}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <a href="../../">← make_tool</a><h1>인간 3D 모델 스튜디오</h1>
+    <span class="sp"></span>
+    <button class="btn sm" id="undo">되돌리기</button><button class="btn sm" id="redo">다시</button>
+    <button class="btn sm" id="shot">PNG 저장</button><button class="btn sm" id="glb">GLB 내보내기</button>
+  </div>
+  <div class="side">
+    <div class="tabs" id="tabs"></div>
+    <div id="panels"></div>
+  </div>
+  <div class="view" id="view">
+    <canvas id="cv"></canvas>
+    <div class="guide" id="guide" hidden></div><div class="thirds" id="thirds" hidden></div>
+    <div class="hud" id="hud"></div><div class="busy" id="busy" hidden>만드는 중…</div>
+  </div>
+</div>
+<script src="ref.js"></script>
+<script src="body.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
