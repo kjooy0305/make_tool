@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>가지 마인드맵 · make_tool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@500;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/style.css">
+<style>
+body{padding:0;overflow:hidden;overscroll-behavior:none}
+.app{position:fixed;inset:0;display:flex;flex-direction:column;background:var(--paper)}
+.top{display:flex;flex-wrap:wrap;gap:6px;align-items:center;border-bottom:2px solid var(--ink);
+  padding:max(8px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) 8px max(12px,env(safe-area-inset-left,0px))}
+.top .back{font-size:13px;font-weight:700;text-decoration:none;border-bottom:2px solid var(--ink);margin-right:4px}
+.top .ttl{font-size:16px;font-weight:900;margin-right:6px}
+.btn.s{min-height:36px;padding:0 10px;font-size:13px;border-radius:10px}
+.btn.s:hover{padding-block:0}
+.btn:disabled{opacity:.35;cursor:default}
+.btn:disabled:hover{border-width:1.5px}
+.sp{flex:1}
+#cv{flex:1;position:relative;overflow:hidden;touch-action:none;cursor:grab;background:var(--paper)}
+#cv.pan{cursor:grabbing}
+#world{position:absolute;left:0;top:0;transform-origin:0 0}
+#links{position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible;pointer-events:none}
+#lp{fill:none;stroke:var(--ink);stroke-width:1.5;vector-effect:non-scaling-stroke}
+.node{position:absolute;left:0;top:0;width:max-content;max-width:280px;min-width:56px;padding:8px 12px;
+  border:1.5px solid var(--ink);border-radius:12px;background:var(--paper);font-size:15px;line-height:1.4;
+  cursor:pointer;user-select:none;-webkit-user-select:none;overflow-wrap:anywhere}
+.node.root{font-weight:900;font-size:17px;border-width:2.5px}
+.node.sel{box-shadow:0 0 0 3px var(--ink)}
+.node.closed{border-style:dashed}
+.node.editing{cursor:text;user-select:text;-webkit-user-select:text}
+.node .t{display:block;outline:none;white-space:pre-wrap;min-width:1em}
+.node .t:empty::before{content:"내용 입력";opacity:.4}
+.acts{position:absolute;left:calc(100% + 6px);top:50%;transform:translateY(-50%);display:flex;gap:4px;font-weight:400}
+.ab{width:28px;height:28px;border-radius:50%;border:1.5px solid var(--ink);background:var(--paper);color:var(--ink);
+  font:800 12px var(--font-num);padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center;white-space:nowrap}
+.ab.tg.shut{width:auto;min-width:28px;padding:0 6px;border-radius:999px;border-width:2.5px}
+.ab.add{background:var(--ink);color:var(--paper);font-size:16px}
+.zoom{position:absolute;right:max(10px,env(safe-area-inset-right,0px));bottom:10px;display:flex;gap:6px;align-items:center;
+  background:var(--paper);border:2px solid var(--ink);border-radius:14px;padding:6px}
+.zoom .pct{font:800 12px var(--font-num);min-width:54px;text-align:center}
+.hint{font-size:12px;padding:6px max(12px,env(safe-area-inset-left,0px)) max(6px,env(safe-area-inset-bottom,0px));border-top:1px solid var(--ink)}
+.hint kbd{font:700 11px var(--font-num);border:1px solid var(--ink);border-radius:5px;padding:0 5px}
+dialog{width:min(640px,calc(100vw - 32px));border:2px solid var(--ink);border-radius:14px;padding:16px;background:var(--paper);color:var(--ink)}
+dialog::backdrop{background:rgba(255,255,255,.85)}
+dialog h2{margin:0 0 4px;font-size:18px;font-weight:900}
+dialog p{margin:0;font-size:13px}
+dialog textarea{width:100%;height:42vh;margin:10px 0;border:1.5px solid var(--ink);border-radius:10px;padding:10px 12px;font:14px/1.6 var(--font-num);color:var(--ink);background:var(--paper);resize:vertical;tab-size:2}
+dialog .bar{justify-content:flex-end}
+@media (max-width:560px){.hint .pc{display:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top" id="top">
+    <a class="back" href="../../">← make_tool</a>
+    <span class="ttl">가지 마인드맵</span>
+    <button class="btn s" id="bAdd" title="선택한 가지의 하위 가지 (Tab)">＋ 하위 가지</button>
+    <button class="btn s" id="bSib" title="같은 단계에 새 가지 (Enter)">↵ 같은 단계</button>
+    <button class="btn s" id="bDel" title="선택한 가지와 그 하위 삭제 (Delete)">삭제</button>
+    <button class="btn s" id="bFold" title="하위 접기/펼치기 (Space)">접기/펼치기</button>
+    <button class="btn s" id="bAll" title="모든 가지 펼치기">모두 펼치기</button>
+    <button class="btn s" id="bUndo" title="실행취소 (Ctrl+Z)">↶ 실행취소</button>
+    <span class="sp"></span>
+    <button class="btn s" id="bExp">내보내기</button>
+    <button class="btn s" id="bImp">불러오기</button>
+  </div>
+  <div id="cv">
+    <div id="world"><svg id="links" aria-hidden="true"><path id="lp"/></svg></div>
+    <div class="zoom">
+      <button class="btn s" id="zOut" aria-label="축소">－</button>
+      <span class="pct" id="pct">100%</span>
+      <button class="btn s" id="zIn" aria-label="확대">＋</button>
+      <button class="btn s" id="zReset">기본 크기</button>
+      <button class="btn s" id="zFit">전체 보기</button>
+    </div>
+  </div>
+  <div class="hint">선택한 가지의 <b>＋</b> = 하위 가지 · <kbd>Enter</kbd> = 같은 단계 새 가지 · <kbd>Tab</kbd> = 하위 가지 · 한 번 더 누르면 수정<span class="pc"> · <kbd>Del</kbd> 삭제 · 방향키 이동 · 휠 확대/축소</span> · 드래그 이동 · 두 손가락 확대</div>
+</div>
+
+<dialog id="dExp">
+  <h2>내보내기</h2>
+  <p>AI에게 그대로 붙여넣거나 TXT 파일로 줄 수 있습니다. 들여쓰기가 하위 가지를 뜻하는 설명이 맨 위에 함께 들어갑니다.</p>
+  <textarea id="expText" readonly spellcheck="false"></textarea>
+  <div class="bar"><button class="btn s" id="expCopy">복사</button><button class="btn s" id="expSave">TXT 저장</button><button class="btn s" data-close>닫기</button></div>
+</dialog>
+<dialog id="dImp">
+  <h2>불러오기</h2>
+  <p>이 도구가 내보낸 TXT, 또는 들여쓰기·<code>-</code>·<code>ㄴ</code>·번호(1.1.)로 계층을 나눈 글을 붙여넣으세요. AI가 만든 글도 됩니다.</p>
+  <textarea id="impText" spellcheck="false" placeholder="여기에 붙여넣거나 TXT 파일을 고르세요"></textarea>
+  <div class="bar">
+    <input type="file" id="impFile" accept=".txt,text/plain" hidden>
+    <button class="btn s" id="impPick">TXT 파일 선택</button>
+    <span class="sp"></span>
+    <button class="btn s" id="impUnder">선택한 가지 아래에 추가</button>
+    <button class="btn s" id="impReplace">전체 바꾸기</button>
+    <button class="btn s" data-close>닫기</button>
+  </div>
+</dialog>
+<div class="toast" id="toast"></div>
+<script src="mindmap.js"></script>
+</body>
+</html>
